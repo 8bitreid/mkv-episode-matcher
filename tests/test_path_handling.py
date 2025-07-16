@@ -8,7 +8,7 @@ from unittest import mock
 sys.path.append(str(Path(__file__).parent.parent.absolute()))
 
 # Import the modules we want to test
-from mkv_episode_matcher.utils import check_filename, normalize_path
+from mkv_episode_matcher.utils import check_filename, normalize_path, clean_text
 
 # Test paths to use in tests
 TEST_PATHS = [
@@ -58,11 +58,11 @@ class TestPathLibImplementation(unittest.TestCase):
 
     def test_path_operations(self):
         """Test various Path operations used in the codebase"""
-        base_path = Path("/mnt/c/Shows/Breaking Bad")
+        base_path = Path("/mnt/c/Shows/Breaking Bad (2023)")
 
         # Test Path joining with / operator
         episode_path = base_path / "Season 1" / "Episode 1.mkv"
-        expected_path = Path("/mnt/c/Shows/Breaking Bad/Season 1/Episode 1.mkv")
+        expected_path = Path("/mnt/c/Shows/Breaking Bad (2023)/Season 1/Episode 1.mkv")
         self.assertEqual(
             episode_path,
             expected_path,
@@ -72,7 +72,7 @@ class TestPathLibImplementation(unittest.TestCase):
         # Test parent directory
         self.assertEqual(
             episode_path.parent,
-            Path("/mnt/c/Shows/Breaking Bad/Season 1"),
+            Path("/mnt/c/Shows/Breaking Bad (2023)/Season 1"),
             "Parent directory should be correctly identified",
         )
 
@@ -113,6 +113,27 @@ class TestEpisodeMatcherShowNameExtraction(unittest.TestCase):
             fixed_show_name,
             "Breaking Bad",
             "normalize_path.name should extract correct show name even with trailing slash",
+        )
+    @mock.patch("mkv_episode_matcher.config.get_config")
+    def test_episode_matcher_show_name_with_date(self, mock_get_config):
+        """Test that process_show extracts show_name incorrectly with date"""
+        # Create a mock config that returns a path with date
+        mock_config = mock.MagicMock()
+        mock_config.get.return_value = "/mnt/c/Shows/Breaking Bad (2023)"
+        mock_get_config.return_value = mock_config
+
+        # Import the module under test
+
+        # Access the function that should be affected by the bug
+        # This line simulates what happens in process_show() but we're just testing the show_name extraction
+        show_dir = mock_config.get("show_dir")
+
+        # How the code would extract show_name with normalize_path and clean_text - this would work
+        fixed_show_name = clean_text(normalize_path(show_dir).name)
+        self.assertEqual(
+            fixed_show_name,
+            "Breaking Bad",
+            "clean_text(normalize_path.name) should extract correct show name even with date in the path",
         )
 
 
