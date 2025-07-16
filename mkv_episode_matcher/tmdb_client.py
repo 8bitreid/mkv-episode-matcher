@@ -7,6 +7,7 @@ from loguru import logger
 
 from mkv_episode_matcher.__main__ import CONFIG_FILE
 from mkv_episode_matcher.config import get_config
+import re
 
 BASE_IMAGE_URL = "https://image.tmdb.org/t/p/original"
 
@@ -68,6 +69,14 @@ def fetch_show_id(show_name):
     Returns:
         str: The TMDb ID of the show, or None if not found.
     """
+    # the year is optional, so we split the show name by " (" and take the last part
+    # and remove the trailing ")" if it exists
+    logger.info(f"Fetching TMDb ID for show: {show_name}")
+    # Extract year if present in the format "Show Name (YYYY and YYYY-YYYY)"
+    # This assumes the year is always in parentheses at the end of the show name
+    # e.g., "Show Name (2020)" or "Show Name (2020-2021)"
+    match = re.search(r"\((\d{4})", show_name)
+    year = match.group(1) if match else None
     config = get_config(CONFIG_FILE)
     tmdb_api_key = config.get("tmdb_api_key")
     url = f"https://api.themoviedb.org/3/search/tv?query={show_name}&api_key={tmdb_api_key}"
@@ -75,6 +84,12 @@ def fetch_show_id(show_name):
     if response.status_code == 200:
         results = response.json().get("results", [])
         if results:
+            # If a year is provided, filter results by year
+            # the year format is YYYY-MM-DD, so we check the first 4 characters
+            if year:
+                results = [
+                    show for show in results if str(show.get("first_air_date", "")).startswith(year)
+                ]
             return str(results[0]["id"])
     return None
 

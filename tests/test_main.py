@@ -126,10 +126,77 @@ class TestEpisodeMatcher:
 
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"results": [{"id": 12345}]}
+        mock_response.json.return_value = {"results": [{"id": 12345}, {"id": 67890}]}
         mock_get.return_value = mock_response
 
         assert fetch_show_id("Test Show") == "12345"
+
+    @patch("mkv_episode_matcher.tmdb_client.requests.get")
+    def test_fetch_show_id_with_year(self, mock_get):
+        from mkv_episode_matcher.tmdb_client import fetch_show_id
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "results": [
+                {
+                    "id": 12345,
+                    "name": "Test Show",
+                    "first_air_date": "2010-01-01"
+                }, {
+                    "id": 67890,
+                    "name": "Another Show",
+                    "first_air_date": "2006-01-01"
+                }
+            ]
+        }
+        mock_get.return_value = mock_response
+
+        assert fetch_show_id("Test Show (2006)") == "67890"
+    @patch("mkv_episode_matcher.tmdb_client.requests.get")
+    def test_fetch_show_id_with_year_range(self, mock_get):
+        from mkv_episode_matcher.tmdb_client import fetch_show_id
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "results": [
+                {
+                    "id": 12345,
+                    "name": "Test Show",
+                    "first_air_date": "2010-01-01"
+                }, {
+                    "id": 67890,
+                    "name": "Another Show",
+                    "first_air_date": "2006-01-01"
+                }
+            ]
+        }
+        mock_get.return_value = mock_response
+
+        assert fetch_show_id("Test Show (2010-2022)") == "12345"
+    @patch("mkv_episode_matcher.tmdb_client.requests.get")
+    def test_fetch_show_id_with_year_numbers_only(self, mock_get):
+        from mkv_episode_matcher.tmdb_client import fetch_show_id
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "results": [
+                {
+                    "id": 12345,
+                    "name": "Test Show",
+                    "first_air_date": "2010-01-01"
+                }, {
+                    "id": 67890,
+                    "name": "Another Show",
+                    "first_air_date": "2006-01-01"
+                }
+            ]
+        }
+        mock_get.return_value = mock_response
+
+        assert fetch_show_id("Test Show (bad file name) (2010-2022)") == "12345"
 
 
 if __name__ == "__main__":
